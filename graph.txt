@@ -1,0 +1,307 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!-- saved from url=(0062)http://www.flotcharts.org/flot/examples/interacting/index.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<title>CHRHS Traffic Monitoring</title>
+
+	<link rel="stylesheet" type="text/css" href="http://www.fivetowns.net/windplanners/style.css"/>
+	<link href='http://fonts.googleapis.com/css?family=Oleo+Script' rel='stylesheet' type='text/css'>
+
+
+	<script language="javascript" type="text/javascript" src="http://www.flotcharts.org/flot/jquery.js"></script>
+	<script language="javascript" type="text/javascript" src="http://www.flotcharts.org/flot/jquery.flot.js"></script>
+    <script language="javascript" type="text/javascript" src="/static/time.js"></script>
+    <script language="javascript" type="text/javascript" src="http://www.flotcharts.org/flot/jquery.flot.navigate.js"></script>
+    <script language="javascript" type="text/javascript" src="http://www.flotcharts.org/flot/jquery.flot.resize.js"></script>
+<style>
+.button {
+  display: inline-block;
+  padding: 5px 10px;
+  font-size: 24px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  color: #fff;
+  background-color: #4CAF50;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 9px #999;
+}
+
+.button:hover {background-color: #3e8e41}
+
+.button:active {
+  background-color: #3e8e41;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+</style>
+<style type="text/css">
+body { font-family: Verdana, Arial, sans-serif; font-size: 12px; }
+h1 { position: relative; text-align: center; font-family: "courier";}
+h2 { position: absolute; width: 100%%; margin: auto; font-size: 1.8vw; text-align: center;}
+#container { content: "position"; border-radius:10px; background-color: #ddffcc; width: 90vw; height: 40vw; position: relative; margin: auto; border: solid;}
+#placeholder { width: 100%%; height: 100%%; position: relative; margin: 10 auto; }
+#placeholder2 { width: 100%%; height: 100%%; position: relative; margin: 10 auto; }
+#label { position: relative; }
+#head {
+    position: relative;
+    height: 6vw;
+}
+.flot-x-axis { font-size: 1vw; }
+</style>
+
+<script type="text/javascript">
+
+	var host = '%s'
+
+	Date.prototype.addHours= function(h){
+    this.setHours(this.getHours()+h);
+    return this;
+    }
+
+    var hours = ["12AM","1AM","2AM","3AM","4AM","5AM","6AM","7AM","8AM","9AM","10AM","11AM","12PM","1PM","2PM","3PM","4PM","5PM","6PM","7PM","8PM","9PM","10PM","11PM","12AM"];
+    var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+
+    var plot, plot2;
+    var d = [];
+    var d2 = [];
+    var markings = [];
+    var dat = []  
+    var dat2 = []
+
+    var downtimes = []
+
+    downtimes.forEach(function(entry)   {
+        date1 = new Date(entry[0])
+        date2 = new Date(entry[1])
+        date1.addHours(-4)
+        date2.addHours(-4)
+        markings.push( {xaxis: {from: date1.getTime(), to: date2.getTime() }, color: "#E8E8E8"})
+    });
+
+	$(function() {
+		plot = $.plot("#placeholder", [
+			{ data: d}
+		], {
+                xaxis: {
+                    mode: "time",
+                    timeformat: "%%b %%e %%Y, %%I%%p",
+                    panRange: [0,0]
+                },
+                grid: {
+                    hoverable: true,
+                    markings: markings,
+                    clickable: true
+                },
+                bars: {
+                    show: true,
+                    barWidth: 60*60*1000
+                },
+                yaxis: {
+                    panRange: false
+                },
+                pan: {
+                    interactive: true
+                }
+		});
+
+
+        $("<div id='tooltip'></div>").css({
+			position: "absolute",
+			display: "none",
+			border: "1px solid #fdd",
+			padding: "2px",
+			"background-color": "#fee",
+			opacity: 0.80
+		}).appendTo("body");
+
+    	$("#placeholder").bind("plothover", function (event, pos, item) {
+			if (item) {
+				var x = item.datapoint[0],
+					y = item.datapoint[1];
+				toolDate = new Date(x);
+				toolDate.addHours(4);
+
+				opts = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric' }
+
+				$("#tooltip").html(toolDate.toLocaleDateString("en-US", opts) + "<br/> Cars = " + y)
+					.css({top: item.pageY - 40, left: item.pageX})
+					.fadeIn(200);
+			} else {
+				$("#tooltip").hide();
+			}
+    	});
+
+		plot2 = $.plot("#placeholder2", [d2], {
+			xaxis: {
+				mode: "time",
+				timeformat: "%%b %%e, %%Y",
+				panRange: [0,0],
+			},
+			legend: {
+				show: true,
+			},
+			grid: {
+				hoverable: true,
+				markings: markings,
+				clickable: true
+			},
+			bars: {
+				show: true,
+				barWidth: 60*60*1000*24
+			},
+			yaxis: {
+                panRange: false
+            },
+			pan: {
+				interactive: true
+			}
+		});
+
+		$("<div id='tooltip'></div>").css({
+			position: "absolute",
+			display: "none",
+			border: "1px solid #fdd",
+			padding: "2px",
+			"background-color": "#fee",
+			opacity: 0.80
+		}).appendTo("body");
+
+    	$("#placeholder2").bind("plothover", function (event, pos, item) {
+			if (item) {
+				var x = item.datapoint[0],
+					y = item.datapoint[1];
+				toolDate = new Date(x);
+				toolDate.addHours(4);
+
+				$("#tooltip").html(months[toolDate.getMonth()] + ' ' + toolDate.getDate() + ", " + toolDate.getFullYear() + "<br/> Cars = " + y)
+					.css({top: item.pageY - 40, left: item.pageX})
+					.fadeIn(200);
+			} else {
+				$("#tooltip").hide();
+			}
+    	});
+		$("#placeholder2").bind("plotclick", function (event, pos, item) {
+			console.log(item);
+			if (item) {
+				$('html').animate({ scrollTop: 0 }, 300);
+				min = item.datapoint[0];
+				max = min + (60*60*1000*24);
+				xaxis = plot.getXAxes()
+				console.log(xaxis);
+				xaxis[0].options.min = min;
+				xaxis[0].options.max = max;
+				plot.setupGrid()
+				plot.draw()
+			}
+		});
+	});
+
+	
+	function load()	{
+		function update()	{
+			fullData = getData()
+			newdata = fullData[0]
+			newdata2 = fullData[1]
+			downtimes = fullData[2]
+			markings = []
+			downtimes.forEach(function(entry)   {
+		        date1 = new Date(entry[0])
+		        date2 = new Date(entry[1])
+		        date1.addHours(-4)
+		        date2.addHours(-4)
+		        markings.push( {xaxis: {from: date1.getTime(), to: date2.getTime() }, color: "#E8E8E8"})
+		    });
+		    plot.getOptions().grid.markings = markings
+		    plot2.getOptions().grid.markings = markings
+			d = []
+			newdata.forEach(function(entry)     {
+		        date = new Date(entry[0]);
+		        date.addHours(-4);
+		        d.push([date.getTime(), entry[1]]);
+		    });
+
+		    dn = new Date();
+		    dn = new Date(dn.getFullYear(),dn.getMonth(),dn.getDate(),dn.getHours(),0);
+		    if (date != dn) {
+		        d.push([dn.getTime()])
+		    }
+		    plot.setData([{data:d}])
+		    plot.setupGrid()
+			dn = new Date();
+	        dn = new Date(dn.getFullYear(), dn.getMonth(), dn.getDate(), dn.getHours() + 1, 0,0,0);
+	        dn.addHours(-4);
+	        plot.getAxes().xaxis.datamax = dn.getTime()
+	        plot.getAxes().xaxis.options.panRange = [plot.getAxes().xaxis.datamin, plot.getAxes().xaxis.datamax]
+	        plot.getAxes().xaxis.datamin = plot.getAxes().xaxis.datamax - 86400000
+	        plot.setupGrid()
+	        plot.draw()
+
+	        d = []
+	        newdata2.forEach(function(entry)    {
+		        date = new Date(entry[0]);
+		        date.addHours(-4);
+		        d.push([date.getTime(), entry[1]]);
+		    });
+
+		    dn = new Date();
+		    dn = new Date(dn.getFullYear(),dn.getMonth(),dn.getDate())
+		    if (date != dn) {
+		        d.push([dn.getTime()])
+		    }
+		    plot2.setData([{data:d}])
+		   	dn = new Date();
+			dn = new Date(dn.getFullYear(), dn.getMonth(), dn.getDate());
+			dn.addHours(-4);
+			plot2.getAxes().xaxis.datamax = dn.getTime() + 60*60*1000*24
+			plot2.getAxes().xaxis.options.panRange = [plot2.getAxes().xaxis.datamin,plot2.getAxes().xaxis.datamax]
+	    	plot2.getAxes().xaxis.datamin = plot.getAxes().xaxis.datamax - 2629746000
+	    	plot2.setupGrid()
+	    	plot2.draw()
+		}
+		$.getScript('http://' + host + '/output.js').done(update);
+	}
+	$.getScript('http://' + host + '/output.js').done(load);
+	setInterval(load,10000)
+
+	function panbutton(val, targetplot)	{
+		num = targetplot.getAxes().xaxis.scale *1000*60*60 * val
+		if (targetplot == plot2)	{
+			num *= 24
+		}
+		targetplot.pan({left: num})
+	}
+
+	</script>
+</head>
+<body>
+	<div id="header">
+			<h1>Windplanners</h1>
+			<img src="http://www.fivetowns.net/windplanners/images/Wind-Farm.png"/>
+			<div id="green-bar"></div><!--green-bar close-->
+			<h1 style="text-align:left;font-size:45px">Cars Entering the School</h2>
+		</div><!--Header close-->
+
+    <div id="head">
+	    <h1 id="header1" style="border: solid; border-radius: 25px; background:#b5d8ff; position:relative; font-size:4vw; width:100%%;">Cars Per Hour</h1>
+    </div>
+    <button class="button" onClick="panbutton(-1, plot)">&#8592</button>
+    <button class="button" style="float:right;" onClick="panbutton(1, plot)">&#8594</button>
+    <div id="container">
+        <div id="placeholder"></div>
+    </div>
+    <br />
+    <div id="head">
+	    <h1 id="header1" style="border: solid; border-radius: 25px; background:#b5d8ff; position:relative; font-size:4vw; width:100%%;">Cars Per Day</h1>
+    </div>
+    <button class="button" onClick="panbutton(-1, plot2)">&#8592</button>
+    <button class="button" style="float:right;" onClick="panbutton(1, plot2)">&#8594</button>
+    <div id="container">
+        <div id="placeholder2"></div>
+    </div>
+</body>
+</html>
+
