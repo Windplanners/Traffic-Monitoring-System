@@ -1,0 +1,104 @@
+#include <SoftwareSerial.h>
+SoftwareSerial HC12(12,11);
+
+const int trigPin = 2;
+const int echoPin = 3;
+const int buttonPin = 10;
+int passcount = 0;
+int recieved = 0;
+bool countvar = false;
+int buttonState = 0;
+int delvar = 400;
+int num = 0;
+int bouncer = 0;
+int debouncer = 0;
+float ratio;
+String string;
+String message;
+
+void setup() {
+  // initialize serial communication:
+  Serial.begin(9600);
+  HC12.begin(9600);
+  pinMode(10,OUTPUT);
+  delay(100);
+  pinMode(trigPin, OUTPUT);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  pinMode(echoPin, INPUT);
+  pulseIn(echoPin, HIGH);
+  pinMode(7, OUTPUT);
+}
+
+void loop() {
+  if (HC12.available()) {
+    message = String(char(HC12.read()));
+    if (message == "1")  {
+      digitalWrite(7, HIGH);
+      recieved += 1;
+    } else if (message == "2")  {
+      HC12.write("2");
+    }
+  } else  {
+    if (recieved <= passcount)  {
+      digitalWrite(7, LOW);
+    }
+  }
+  // establish variables for duration of the ping, 
+  // and the distance result in inches and centimeters:
+  long duration, inches, cm;
+
+
+
+  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  pinMode(trigPin, OUTPUT);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Read the signal from the sensor: a HIGH pulse whose
+  // duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(echoPin, INPUT);
+  duration = pulseIn(echoPin, HIGH);
+
+  // convert the time into a distance
+  inches = microsecondsToInches(duration);
+
+  if (inches < 130) {
+    countvar = true;
+    digitalWrite(10,HIGH);
+    bouncer = 0;
+    debouncer += 1;
+  } else  {
+    bouncer += 1;
+    if (bouncer > 2 and debouncer <= 2) {
+      debouncer = 0;
+    }
+    if (countvar == true and bouncer > 2 and debouncer > 2) {
+      bouncer = 3;
+      countvar = false;
+      debouncer = 0;
+      HC12.write("1");
+      passcount += 1;
+    }
+  }
+  delay(20);
+  
+}
+
+void serialEvent() {
+  Serial.println("EVENT");
+  if (Serial.readString() == "c") {
+    Serial.println("-----");
+    Serial.println(passcount);
+    Serial.println(recieved);
+  }
+}
+
+long microsecondsToInches(long microseconds)
+{
+  return microseconds / 74 / 2;
+}
