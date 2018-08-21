@@ -1,0 +1,51 @@
+#include <SoftwareSerial.h>
+SoftwareSerial HC12(12, 11); // HC-12 TX Pin, HC-12 RX Pin
+
+int count = 0;
+
+void setup() {
+  Serial.begin(9600);             // Serial port to computer
+  HC12.begin(9600);
+}
+
+int counter = 0;
+int reciever = 0;
+String message;
+bool offline = false;
+
+void loop() {
+  counter += 1;
+  if (offline == false) {
+    reciever += 1;
+  }
+  if (HC12.available()) {        // If HC-12 has data
+    message = String(char(HC12.read()));
+    if (message == "1") {
+      HC12.write("1");
+      Serial.println("C");
+      count += 1;
+    } else if (message == "2") {
+      if (offline)  {
+        Serial.println("P");
+      }
+      reciever = 0;
+      offline = false;
+    }
+  }
+  delay(10);
+  if (counter > 500) {
+    counter = 0;
+    HC12.write("2");
+  }
+  if (reciever > 1500)  {
+    if (offline == false) {
+      Serial.println("O");
+    }
+    offline = true;
+  }
+}
+
+void serialEvent()  {
+  Serial.println(count);
+  Serial.read();
+}
